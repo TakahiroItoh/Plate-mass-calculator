@@ -9,12 +9,8 @@
 <body>
   <main class="app-shell">
     <section class="panel intro">
-      <p class="eyebrow">Plate Calculator</p>
       <h1>Plate Mass Calculator</h1>
-      <p class="lede">
-        Select a material and enter the dimensions of a rectangular plate to see
-        a live isometric wireframe and the calculated <strong>Mass [kg]</strong>.
-      </p>
+      <p class="lede">Select a material and enter the dimensions of a rectangular plate to see a live isometric wireframe and the calculated <strong>Mass [kg]</strong>.</p>
     </section>
 
     <section class="workspace">
@@ -27,7 +23,7 @@
               <option value="7.916452747">304 stainless (7.916 g/cm3)</option>
               <option value="7.87">1045 steel (7.870 g/cm3)</option>
               <option value="4.43">Ti-6AL-4V (4.430 g/cm3)</option>
-              <option value="2.71">7075-T6 (2.710 g/cm3)</option>
+              <option value="2.71" selected>7075-T6 (2.710 g/cm3)</option>
               <option value="9.00">101 copper (9.000 g/cm3)</option>
               <option value="1.29">Nylon 66 (1.290 g/cm3)</option>
               <option value="1.20">Polycarbonate (1.200 g/cm3)</option>
@@ -37,24 +33,53 @@
           </label>
           <label>
             <span>Width [mm]</span>
-            <input id="width" name="width" type="number" min="0" step="0.1" value="120">
+            <input id="width" name="width" type="number" min="0" step="0.1" value="1000">
           </label>
           <label>
             <span>Length [mm]</span>
-            <input id="length" name="length" type="number" min="0" step="0.1" value="240">
+            <input id="length" name="length" type="number" min="0" step="0.1" value="1000">
           </label>
           <label>
             <span>Height [mm]</span>
-            <input id="height" name="height" type="number" min="0" step="0.1" value="18">
+            <input id="height" name="height" type="number" min="0" step="0.1" value="40">
           </label>
+
+          <label class="toggle-row">
+            <span>Apply Pocketing</span>
+            <input id="pocketing-enabled" name="pocketing-enabled" type="checkbox">
+          </label>
+
+          <div class="subsection">
+            <p class="subsection-title">Pocketing Setup</p>
+            <div class="subsection-grid">
+              <label>
+                <span>Bottom Thickness [mm]</span>
+                <input id="bottom-thickness" name="bottom-thickness" type="number" min="0" step="0.1" value="3">
+              </label>
+              <label>
+                <span>Rib Thickness [mm]</span>
+                <input id="rib-thickness" name="rib-thickness" type="number" min="0" step="0.1" value="4">
+              </label>
+              <label>
+                <span>Pockets Along Width</span>
+                <input id="pockets-width" name="pockets-width" type="number" min="1" step="1" value="8">
+              </label>
+              <label>
+                <span>Pockets Along Length</span>
+                <input id="pockets-length" name="pockets-length" type="number" min="1" step="1" value="8">
+              </label>
+              <label>
+                <span>Width End Keep-Out [mm]</span>
+                <input id="margin-width" name="margin-width" type="number" min="0" step="0.1" value="40">
+              </label>
+              <label>
+                <span>Length End Keep-Out [mm]</span>
+                <input id="margin-length" name="margin-length" type="number" min="0" step="0.1" value="20">
+              </label>
+            </div>
+          </div>
         </form>
 
-        <div class="result-card">
-          <p class="result-label">Mass [kg]</p>
-          <output id="mass" class="result-value">0.000</output>
-          <p id="material-info" class="supporting-text">Density: 7.916 g/cm3</p>
-          <p id="volume" class="supporting-text">Volume: 0.000 cm3</p>
-        </div>
       </section>
 
       <section class="panel visual">
@@ -78,6 +103,7 @@
             <line id="edge-bottom-left" />
             <line id="edge-bottom-right" />
           </g>
+          <g id="pocket-group"></g>
 
           <g class="dimension-lines">
             <line id="dim-width-line" />
@@ -88,6 +114,17 @@
             <text id="dim-height-text"></text>
           </g>
         </svg>
+
+        <div class="result-card">
+          <p class="result-label">Remaining Mass [kg]</p>
+          <output id="mass" class="result-value">0.000</output>
+          <p id="removed-mass" class="supporting-text">Removed Mass: 0.000 kg</p>
+          <p id="total-mass" class="supporting-text">Total Mass: 0.000 kg</p>
+          <p id="material-info" class="supporting-text">Density: 7.916 g/cm3</p>
+          <p id="volume" class="supporting-text">Volume: 0.000 cm3</p>
+          <p id="pocket-summary" class="supporting-text">Pocketing disabled</p>
+          <p id="warning" class="supporting-text warning-text"></p>
+        </div>
       </section>
     </section>
   </main>
