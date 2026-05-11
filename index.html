@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plate Mass & Isometric Viewer</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="panel intro">
+      <p class="eyebrow">Plate Calculator</p>
+      <h1>Plate Mass Calculator</h1>
+      <p class="lede">
+        Select a material and enter the dimensions of a rectangular plate to see
+        a live isometric wireframe and the calculated <strong>Mass [kg]</strong>.
+      </p>
+    </section>
+
+    <section class="workspace">
+      <section class="panel controls">
+        <h2>Input</h2>
+        <form id="plate-form" class="form-grid" autocomplete="off">
+          <label>
+            <span>Material</span>
+            <select id="density" name="density">
+              <option value="7.916452747">304 stainless (7.916 g/cm3)</option>
+              <option value="7.87">1045 steel (7.870 g/cm3)</option>
+              <option value="4.43">Ti-6AL-4V (4.430 g/cm3)</option>
+              <option value="2.71">7075-T6 (2.710 g/cm3)</option>
+              <option value="9.00">101 copper (9.000 g/cm3)</option>
+              <option value="1.29">Nylon 66 (1.290 g/cm3)</option>
+              <option value="1.20">Polycarbonate (1.200 g/cm3)</option>
+              <option value="1.43">POM (1.430 g/cm3)</option>
+              <option value="1.34">PEEK (1.340 g/cm3)</option>
+            </select>
+          </label>
+          <label>
+            <span>Width [mm]</span>
+            <input id="width" name="width" type="number" min="0" step="0.1" value="120">
+          </label>
+          <label>
+            <span>Length [mm]</span>
+            <input id="length" name="length" type="number" min="0" step="0.1" value="240">
+          </label>
+          <label>
+            <span>Height [mm]</span>
+            <input id="height" name="height" type="number" min="0" step="0.1" value="18">
+          </label>
+        </form>
+
+        <div class="result-card">
+          <p class="result-label">Mass [kg]</p>
+          <output id="mass" class="result-value">0.000</output>
+          <p id="material-info" class="supporting-text">Density: 7.916 g/cm3</p>
+          <p id="volume" class="supporting-text">Volume: 0.000 cm3</p>
+        </div>
+      </section>
+
+      <section class="panel visual">
+        <div class="visual-header">
+          <h2>Isometric View</h2>
+          <p id="dimensions" class="supporting-text"></p>
+        </div>
+        <svg id="diagram" viewBox="0 0 520 360" role="img" aria-label="Rectangular plate isometric wireframe drawing">
+          <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+              <feDropShadow dx="0" dy="18" stdDeviation="14" flood-color="#3e2616" flood-opacity="0.24" />
+            </filter>
+          </defs>
+
+          <g id="plate-group" filter="url(#shadow)">
+            <polygon id="face-top" />
+            <polygon id="face-left" />
+            <polygon id="face-right" />
+            <line id="edge-front" />
+            <line id="edge-back" />
+            <line id="edge-bottom-left" />
+            <line id="edge-bottom-right" />
+          </g>
+
+          <g class="dimension-lines">
+            <line id="dim-width-line" />
+            <line id="dim-length-line" />
+            <line id="dim-height-line" />
+            <text id="dim-width-text"></text>
+            <text id="dim-length-text"></text>
+            <text id="dim-height-text"></text>
+          </g>
+        </svg>
+      </section>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
