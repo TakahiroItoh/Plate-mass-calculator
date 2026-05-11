@@ -6,7 +6,7 @@
   --muted: #3a3a3a;
   --accent: #000000;
   --accent-strong: #000000;
-  --line: #a8a8a8;
+  --line: #ffffff;
   --field: #ffffff;
   --shadow: none;
 }
@@ -41,15 +41,6 @@ body {
   margin-bottom: 24px;
 }
 
-.eyebrow {
-  margin: 0 0 10px;
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 h1,
 h2,
 p {
@@ -63,7 +54,7 @@ h1 {
 
 .lede {
   margin-top: 12px;
-  max-width: 60ch;
+  max-width: none;
   color: var(--muted);
   line-height: 1.7;
 }
@@ -83,6 +74,39 @@ h1 {
   display: grid;
   gap: 16px;
   margin-top: 18px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0 0;
+}
+
+.toggle-row input {
+  appearance: auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 1px solid #000000;
+}
+
+.subsection {
+  border: 1px solid #000000;
+  padding: 16px;
+}
+
+.subsection-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.subsection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 label span {
@@ -129,8 +153,14 @@ select:focus {
   transform: none;
 }
 
+input:disabled,
+select:disabled {
+  color: #8a8a8a;
+  border-color: #b5b5b5;
+}
+
 .result-card {
-  margin-top: 22px;
+  margin-top: 24px;
   padding: 22px;
   border: 1px solid #000000;
   border-radius: 0;
@@ -161,6 +191,10 @@ select:focus {
   color: var(--muted);
 }
 
+.warning-text {
+  min-height: 1.5em;
+}
+
 .visual {
   min-height: 620px;
 }
@@ -175,7 +209,7 @@ select:focus {
 
 #diagram {
   width: 100%;
-  height: min(68vh, 560px);
+  height: min(72vh, 620px);
   border: 1px solid #000000;
   border-radius: 0;
   background: #ffffff;
@@ -185,7 +219,7 @@ select:focus {
 #plate-group line {
   fill: none;
   stroke: #000000;
-  stroke-width: 2.4;
+  stroke-width: 1.6;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -193,6 +227,12 @@ select:focus {
 #face-left,
 #face-right {
   opacity: 0.78;
+}
+
+#pocket-group polygon {
+  fill: none;
+  stroke: #ff5a1f;
+  stroke-width: 1.1;
 }
 
 .dimension-lines line {
@@ -214,6 +254,10 @@ select:focus {
 
   .visual {
     min-height: auto;
+  }
+
+  .subsection-grid {
+    grid-template-columns: 1fr;
   }
 }
 
