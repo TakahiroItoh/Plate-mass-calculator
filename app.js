@@ -3,9 +3,20 @@ const elements = {
   width: document.getElementById("width"),
   length: document.getElementById("length"),
   height: document.getElementById("height"),
+  pocketingEnabled: document.getElementById("pocketing-enabled"),
+  bottomThickness: document.getElementById("bottom-thickness"),
+  ribThickness: document.getElementById("rib-thickness"),
+  pocketsWidth: document.getElementById("pockets-width"),
+  pocketsLength: document.getElementById("pockets-length"),
+  marginWidth: document.getElementById("margin-width"),
+  marginLength: document.getElementById("margin-length"),
   mass: document.getElementById("mass"),
+  removedMass: document.getElementById("removed-mass"),
+  totalMass: document.getElementById("total-mass"),
   materialInfo: document.getElementById("material-info"),
   volume: document.getElementById("volume"),
+  pocketSummary: document.getElementById("pocket-summary"),
+  warning: document.getElementById("warning"),
   dimensions: document.getElementById("dimensions"),
   faceTop: document.getElementById("face-top"),
   faceLeft: document.getElementById("face-left"),
@@ -14,6 +25,7 @@ const elements = {
   edgeBack: document.getElementById("edge-back"),
   edgeBottomLeft: document.getElementById("edge-bottom-left"),
   edgeBottomRight: document.getElementById("edge-bottom-right"),
+  pocketGroup: document.getElementById("pocket-group"),
   widthLine: document.getElementById("dim-width-line"),
   lengthLine: document.getElementById("dim-length-line"),
   heightLine: document.getElementById("dim-height-line"),
@@ -22,11 +34,24 @@ const elements = {
   heightText: document.getElementById("dim-height-text")
 };
 
-const svgOrigin = { x: 254, y: 192 };
+const svgOrigin = { x: 234, y: 192 };
+const pocketInputs = [
+  elements.bottomThickness,
+  elements.ribThickness,
+  elements.pocketsWidth,
+  elements.pocketsLength,
+  elements.marginWidth,
+  elements.marginLength
+];
 
 function toPositiveNumber(value) {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function toPositiveInteger(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
 function projectPoint(x, y, z) {
@@ -52,23 +77,176 @@ function setText(textNode, point, value) {
   textNode.textContent = value;
 }
 
+function setPocketInputsEnabled(enabled) {
+  pocketInputs.forEach((input) => {
+    input.disabled = !enabled;
+  });
+}
+
+function clearPockets() {
+  elements.pocketGroup.replaceChildren();
+}
+
+function buildPocketLayout(widthMm, lengthMm, heightMm) {
+  const bottomThickness = toPositiveNumber(elements.bottomThickness.value);
+  const ribThickness = toPositiveNumber(elements.ribThickness.value);
+  const pocketsAlongWidth = toPositiveInteger(elements.pocketsWidth.value);
+  const pocketsAlongLength = toPositiveInteger(elements.pocketsLength.value);
+  const marginWidth = toPositiveNumber(elements.marginWidth.value);
+  const marginLength = toPositiveNumber(elements.marginLength.value);
+
+  const warnings = [];
+
+  if (bottomThickness >= heightMm) {
+    warnings.push("Bottom thickness must be smaller than the plate height.");
+  }
+
+  if (pocketsAlongWidth === 0 || pocketsAlongLength === 0) {
+    warnings.push("Pocket counts along width and length must both be at least 1.");
+  }
+
+  const usableWidth = widthMm - marginWidth * 2;
+  const usableLength = lengthMm - marginLength * 2;
+
+  if (usableWidth <= 0 || usableLength <= 0) {
+    warnings.push("Keep-out widths leave no usable area for pocketing.");
+  }
+
+  const pocketWidth =
+    pocketsAlongWidth > 0
+      ? (usableWidth - ribThickness * (pocketsAlongWidth - 1)) / pocketsAlongWidth
+      : -1;
+  const pocketLength =
+    pocketsAlongLength > 0
+      ? (usableLength - ribThickness * (pocketsAlongLength - 1)) / pocketsAlongLength
+      : -1;
+
+  if (pocketWidth <= 0 || pocketLength <= 0) {
+    warnings.push("Pocket count, rib thickness, and keep-out widths do not fit within the plate.");
+  }
+
+  if (warnings.length > 0) {
+    return {
+      isValid: false,
+      warnings,
+      bottomThickness,
+      ribThickness,
+      pocketsAlongWidth,
+      pocketsAlongLength,
+      marginWidth,
+      marginLength
+    };
+  }
+
+  return {
+    isValid: true,
+    warnings,
+    bottomThickness,
+    ribThickness,
+    pocketsAlongWidth,
+    pocketsAlongLength,
+    marginWidth,
+    marginLength,
+    usableWidth,
+    usableLength,
+    pocketWidth,
+    pocketLength,
+    pocketDepth: heightMm - bottomThickness
+  };
+}
+
+function drawPockets(layout, scale, plateHeightScaled) {
+  clearPockets();
+
+  if (!layout?.isValid) {
+    return;
+  }
+
+  for (let widthIndex = 0; widthIndex < layout.pocketsAlongWidth; widthIndex += 1) {
+    const xStartMm =
+      layout.marginWidth + widthIndex * (layout.pocketWidth + layout.ribThickness);
+
+    for (let lengthIndex = 0; lengthIndex < layout.pocketsAlongLength; lengthIndex += 1) {
+      const yStartMm =
+        layout.marginLength + lengthIndex * (layout.pocketLength + layout.ribThickness);
+
+      const x0 = xStartMm * scale;
+      const x1 = (xStartMm + layout.pocketWidth) * scale;
+      const y0 = yStartMm * scale;
+      const y1 = (yStartMm + layout.pocketLength) * scale;
+
+      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      polygon.setAttribute(
+        "points",
+        pointsToAttribute([
+          projectPoint(x0, y0, plateHeightScaled),
+          projectPoint(x1, y0, plateHeightScaled),
+          projectPoint(x1, y1, plateHeightScaled),
+          projectPoint(x0, y1, plateHeightScaled)
+        ])
+      );
+
+      elements.pocketGroup.appendChild(polygon);
+    }
+  }
+}
+
 function updateView() {
   const density = toPositiveNumber(elements.density.value);
-  const materialName = elements.density.options[elements.density.selectedIndex].text;
+  const selectedLabel = elements.density.options[elements.density.selectedIndex].text;
+  const materialName = selectedLabel.split(" (")[0];
   const widthMm = toPositiveNumber(elements.width.value);
   const lengthMm = toPositiveNumber(elements.length.value);
   const heightMm = toPositiveNumber(elements.height.value);
+  const pocketingEnabled = elements.pocketingEnabled.checked;
 
-  const volumeCm3 = (widthMm * lengthMm * heightMm) / 1000;
-  const massKg = (density * volumeCm3) / 1000;
+  setPocketInputsEnabled(pocketingEnabled);
 
-  elements.mass.textContent = massKg.toFixed(3);
+  const totalVolumeCm3 = (widthMm * lengthMm * heightMm) / 1000;
+  const totalMassKg = (density * totalVolumeCm3) / 1000;
+
+  let removedVolumeCm3 = 0;
+  let removedMassKg = 0;
+  let remainingMassKg = totalMassKg;
+  let pocketSummary = "Pocketing disabled";
+  let warningMessage = "";
+
+  let pocketLayout = null;
+
+  if (pocketingEnabled) {
+    pocketLayout = buildPocketLayout(widthMm, lengthMm, heightMm);
+
+    if (pocketLayout.isValid) {
+      removedVolumeCm3 =
+        (pocketLayout.pocketWidth *
+          pocketLayout.pocketLength *
+          pocketLayout.pocketDepth *
+          pocketLayout.pocketsAlongWidth *
+          pocketLayout.pocketsAlongLength) /
+        1000;
+      removedMassKg = (density * removedVolumeCm3) / 1000;
+      remainingMassKg = totalMassKg - removedMassKg;
+      pocketSummary =
+        `${pocketLayout.pocketsAlongWidth} x ${pocketLayout.pocketsAlongLength} pockets` +
+        ` | Pocket size: ${pocketLayout.pocketWidth.toFixed(1)} x ${pocketLayout.pocketLength.toFixed(1)} mm` +
+        ` | Depth: ${pocketLayout.pocketDepth.toFixed(1)} mm`;
+    } else {
+      warningMessage = pocketLayout.warnings.join(" ");
+      pocketSummary = "Pocketing inputs need adjustment";
+    }
+  }
+
+  elements.mass.textContent = remainingMassKg.toFixed(3);
+  elements.removedMass.textContent = `Removed Mass: ${removedMassKg.toFixed(3)} kg`;
+  elements.totalMass.textContent = `Total Mass: ${totalMassKg.toFixed(3)} kg`;
   elements.materialInfo.textContent = `${materialName} | Density: ${density.toFixed(3)} g/cm3`;
-  elements.volume.textContent = `Volume: ${volumeCm3.toFixed(3)} cm3`;
+  elements.volume.textContent = `Total Volume: ${totalVolumeCm3.toFixed(3)} cm3 | Removed Volume: ${removedVolumeCm3.toFixed(3)} cm3`;
+  elements.pocketSummary.textContent = pocketSummary;
+  elements.warning.textContent = warningMessage;
   elements.dimensions.textContent = `W ${widthMm.toFixed(1)} mm / L ${lengthMm.toFixed(1)} mm / H ${heightMm.toFixed(1)} mm`;
 
   const maxDimension = Math.max(widthMm, lengthMm, heightMm, 1);
-  const scale = 180 / maxDimension;
+  const scale = 220 / maxDimension;
   const width = widthMm * scale;
   const length = lengthMm * scale;
   const height = Math.max(heightMm * scale, 6);
@@ -105,7 +283,7 @@ function updateView() {
   setLine(elements.widthLine, widthStart, widthEnd);
   setText(
     elements.widthText,
-    { x: (widthStart.x + widthEnd.x) / 2, y: (widthStart.y + widthEnd.y) / 2 - 14 },
+    { x: (widthStart.x + widthEnd.x) / 2, y: (widthStart.y + widthEnd.y) / 2 - 6 },
     `W ${widthMm.toFixed(1)} mm`
   );
 
@@ -114,7 +292,7 @@ function updateView() {
   setLine(elements.lengthLine, lengthStart, lengthEnd);
   setText(
     elements.lengthText,
-    { x: (lengthStart.x + lengthEnd.x) / 2 - 42, y: (lengthStart.y + lengthEnd.y) / 2 - 4 },
+    { x: (lengthStart.x + lengthEnd.x) / 2 - 24, y: (lengthStart.y + lengthEnd.y) / 2 - 2 },
     `L ${lengthMm.toFixed(1)} mm`
   );
 
@@ -123,9 +301,15 @@ function updateView() {
   setLine(elements.heightLine, heightStart, heightEnd);
   setText(
     elements.heightText,
-    { x: heightEnd.x + 48, y: (heightStart.y + heightEnd.y) / 2 + 4 },
+    { x: heightEnd.x + 18, y: (heightStart.y + heightEnd.y) / 2 + 4 },
     `H ${heightMm.toFixed(1)} mm`
   );
+
+  if (pocketingEnabled && pocketLayout?.isValid) {
+    drawPockets(pocketLayout, scale, height);
+  } else {
+    clearPockets();
+  }
 }
 
 document.getElementById("plate-form").addEventListener("input", updateView);
